@@ -5,10 +5,10 @@ mod schema;
 
 use actix_web::{web, App, HttpServer};
 use connection::connection_to_db;
-use controller::get_users;
+use controller::{create_user, get_users};
 use diesel::PgConnection;
 
-struct AppData {
+pub struct AppData {
     db_conn: std::sync::Arc<std::sync::Mutex<PgConnection>>,
 }
 
@@ -20,8 +20,13 @@ async fn main() -> std::io::Result<()> {
         db_conn: std::sync::Arc::new(std::sync::Mutex::new(db_connection)),
     });
 
-    HttpServer::new(move || App::new().app_data(app_data.clone()).service(get_users))
-        .bind(("0.0.0.0", 8081))?
-        .run()
-        .await
+    HttpServer::new(move || {
+        App::new()
+            .app_data(app_data.clone())
+            .service(get_users)
+            .service(create_user)
+    })
+    .bind(("0.0.0.0", 8081))?
+    .run()
+    .await
 }
