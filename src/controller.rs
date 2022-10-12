@@ -49,3 +49,36 @@ pub async fn create_user(
 
     HttpResponse::Created()
 }
+
+#[derive(Deserialize)]
+pub struct LoginPayload {
+    username: String,
+    password: String,
+}
+
+#[post("/user/login")]
+pub async fn login_user(
+    payload: web::Json<LoginPayload>,
+    data: web::Data<AppData>,
+) -> impl Responder {
+    use crate::schema::users::dsl::*;
+
+    let db_conn = &mut *data.db_conn.lock().unwrap_or_else(PoisonError::into_inner);
+
+    let user_found = users
+        .filter(username.eq(&payload.username))
+        .first::<User>(db_conn)
+        .optional()
+        .unwrap();
+
+    if user_found.is_none() {
+        return HttpResponse::NotFound();
+    }
+
+    let user = user_found.unwrap();
+    if !bcrypt::verify(&payload.password, &user.password_hash).unwrap() {
+        return HttpResponse::Unauthorized();
+    }
+
+    HttpResponse::Ok()
+}

@@ -5,7 +5,7 @@ mod schema;
 
 use actix_web::{web, App, HttpServer};
 use connection::connection_to_db;
-use controller::{create_user, get_users};
+use controller::{create_user, get_users, login_user};
 use diesel::PgConnection;
 
 pub struct AppData {
@@ -25,6 +25,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(app_data.clone())
             .service(get_users)
             .service(create_user)
+            .service(login_user)
     })
     .bind(("0.0.0.0", 8081))?
     .run()
